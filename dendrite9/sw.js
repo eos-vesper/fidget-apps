@@ -1,4 +1,4 @@
-const CACHE = 'dendrite9-v095';
+const CACHE = 'dendrite9-v096';
 const ASSETS = ['./index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {

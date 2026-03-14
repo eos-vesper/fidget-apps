@@ -32,8 +32,8 @@ button:active{opacity:0.9}
 /* Shimmer overlay for Void Glitter */
 #shimmer{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:0;background-size:200% 200%;animation:shimmer 6s ease infinite}
 #device.skin-voidGlitter #shimmer{opacity:1}
-.glitter-dot{position:absolute;border-radius:50%;pointer-events:none;z-index:0;opacity:0;animation:sparkle 3s ease-in-out infinite}
-#device.skin-voidGlitter .glitter-dot{opacity:1}
+.glitter-dot{position:absolute;border-radius:50%;pointer-events:none;z-index:0;opacity:0}
+#device.skin-voidGlitter .glitter-dot{animation:sparkle 3s ease-in-out infinite}
 
 /* Header */
 #header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;padding:0 6px;position:relative;z-index:2}
@@ -81,7 +81,7 @@ button:active{opacity:0.9}
 .led{width:10px;height:10px;border-radius:50%;transition:all .3s}
 
 /* Modules */
-.module{border-radius:8px;padding:10px 12px;margin-bottom:9px;
+.module{border-radius:8px;padding:10px 12px;margin-bottom:9px;position:relative;z-index:2;
   background:var(--bezel99);border:1px solid var(--line22);transition:opacity .5s}
 .module.inactive{opacity:.35;pointer-events:none}
 .mod-label{font-size:7px;color:var(--label77);letter-spacing:2.5px;margin-bottom:7px;text-transform:uppercase;font-weight:bold}
@@ -326,8 +326,8 @@ const SKINS=[
     leds:['#bb44ff','#44ffaa','#ff44bb'],line:'#bb44ff',screw:'#1a0a2a',label:'#d4bbff',
     barA:'#44ffaa',barABg:'#0a2a1a',barB:'linear-gradient(90deg,#6600cc,#bb44ff,#dd88ff)',barBBorder:'#bb44ff33',barBLabel:'#bb44ff99',
     cursor:'#aa66ff',pellet:'#44ffaa',glitter:true,
-    shimmer:'linear-gradient(135deg,transparent 0%,#ffffff06 25%,transparent 50%,#bb44ff08 75%,transparent 100%)',
-    dispShimmer:'linear-gradient(135deg,transparent 0%,#bb44ff0a 40%,transparent 60%,#44ffaa08 80%,transparent 100%)'},
+    shimmer:'linear-gradient(135deg,transparent 0%,#ffffff11 20%,transparent 40%,#bb44ff15 60%,transparent 80%,#44ffaa0c 95%,transparent 100%)',
+    dispShimmer:'linear-gradient(135deg,transparent 0%,#bb44ff18 35%,transparent 55%,#44ffaa10 75%,transparent 100%)'},
 ];
 
 const SIGILS='⌬◈⏣⎔⏢◇△▽⬡⬢◎⊛⊕⊗⟁⧫⌖☿♄⚶'.split('');
@@ -650,9 +650,10 @@ document.querySelectorAll('.dpad-btn').forEach(btn=>{
 });
 
 // ── Joystick ──
-joyEl.onpointerdown=e=>{e.preventDefault();S.joyActive=true;joyStick.classList.add('active');joyMove(e)};
+joyEl.onpointerdown=e=>{e.preventDefault();joyEl.setPointerCapture(e.pointerId);S.joyActive=true;S._fx=S.cx;S._fy=S.cy;joyStick.classList.add('active');joyMove(e)};
 joyEl.onpointermove=e=>{if(!S.joyActive)return;e.preventDefault();joyMove(e)};
-joyEl.onpointerup=joyEl.onpointercancel=joyEl.onpointerleave=()=>{
+joyEl.onpointerup=joyEl.onpointercancel=joyEl.onpointerleave=e=>{
+  if(S.joyActive)try{joyEl.releasePointerCapture(e.pointerId)}catch(ex){}
   S.joyActive=false;S.joyX=0;S.joyY=0;
   joyStick.style.transform='translate(0,0)';joyStick.classList.remove('active');
 };
@@ -676,13 +677,14 @@ function startHack(){
   if(S.hack!=='done')S.hackLog=[];
   S.hack='running';S.b1=0;S.b2=0;sfx.beep();
   hackIv=setInterval(()=>{
-    if(S.hackLog.length>80)return;
     const r=Math.random();let line;
     if(r<.25){line=HACK_MSGS[S.hackMsgIdx%HACK_MSGS.length];S.hackMsgIdx++}
     else if(r<.55)line='0x'+Math.floor(Math.random()*0xFFFFFFFF).toString(16).toUpperCase().padStart(8,'0')+' '+bin()+' '+bin()+' '+bin();
     else if(r<.8)line=Array.from({length:4+Math.floor(Math.random()*3)},bin).join(' ');
     else line='['+[0,0,0,0].map(()=>Math.floor(Math.random()*256)).join('.')+'] ACK '+bin();
-    S.hackLog.push(line);updateHackUI();
+    S.hackLog.push(line);
+    if(S.hackLog.length>12)S.hackLog=S.hackLog.slice(-10);
+    updateHackUI();
   },95);
   const t1=rnd(3000,7000),t2=rnd(3000,7000);
   hackB1Iv=setInterval(()=>{S.b1=Math.min(100,S.b1+100/(t1/50));barA.style.width=S.b1+'%';if(S.b1>=100)clearInterval(hackB1Iv)},50);
@@ -720,9 +722,9 @@ function mainLoop(now){
     // Joystick movement
     if(S.joyActive&&(Math.abs(S.joyX)>.05||Math.abs(S.joyY)>.05)){
       const inv=S.sw[3]?-1:1,spd=14*dt*(S.sw[1]?2:1);
-      const nx=Math.max(0,Math.min(CW-1,S.cx+S.joyX*spd*inv));
-      const ny=Math.max(0,Math.min(CH-1,S.cy+S.joyY*spd*inv));
-      const gx=Math.round(nx),gy=Math.round(ny);
+      S._fx=Math.max(0,Math.min(CW-1,S._fx+S.joyX*spd*inv));
+      S._fy=Math.max(0,Math.min(CH-1,S._fy+S.joyY*spd*inv));
+      const gx=Math.round(S._fx),gy=Math.round(S._fy);
       if(gx!==S.cx||gy!==S.cy){
         S.cx=gx;S.cy=gy;
         const t=S.trail[S.trail.length-1];
@@ -730,10 +732,9 @@ function mainLoop(now){
           S.trail.push({x:gx,y:gy,t:now});
           if(S.sw[2])S.ghost.push({x:gx,y:gy,t:now+400});
           checkEat(gx,gy);
+          updateDisplay();
         }
       }
-      // Keep fractional position for smooth joystick
-      S._fx=nx;S._fy=ny;
     }else{S._fx=S.cx;S._fy=S.cy}
     // Trail decay
     if(!S.sw[0]){
