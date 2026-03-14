@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0a0a0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>DENDRITE-9</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100vh;background:#0a0a0e;font-family:'Courier New',Courier,monospace;user-select:none;-webkit-user-select:none;overflow-y:scroll}
+body{display:flex;justify-content:center;padding:12px 4px 40px}
+button{outline:none;font-family:inherit;border:none;cursor:pointer}
+button:active{opacity:0.9}
+
+#device{width:330px;max-width:96vw;border-radius:16px;padding:14px 13px 16px;position:relative;overflow:hidden;
+  background:var(--body);border:3px solid var(--bezel);
+  box-shadow:0 6px 28px rgba(0,0,0,0.7),inset 0 1px 0 #ffffff18,inset 0 -1px 0 var(--bezel);
+  transition:background .4s,border-color .4s}
+#device.glitch{filter:hue-rotate(25deg) brightness(1.1);transform:translate(2px,-1px)}
+
+.edge-line{position:absolute;inset:7px;border:1px solid var(--line25);border-radius:12px;pointer-events:none;z-index:1}
+.vert-line{position:absolute;top:0;width:1px;height:100%;background:var(--line10);pointer-events:none;z-index:1}
+.vert-l{left:32px}.vert-r{right:32px}
+.screw{position:absolute;width:9px;height:9px;border-radius:50%;border:1px solid #00000044;z-index:2}
+.screw::after{content:'';position:absolute;top:3.5px;left:1px;right:1px;height:1px;background:#00000055}
+.s-tl{top:11px;left:11px}.s-tr{top:11px;right:11px}.s-bl{bottom:11px;left:11px}.s-br{bottom:11px;right:11px}
+
+/* Shimmer overlay for Void Glitter */
+#shimmer{position:absolute;inset:0;pointer-events:none;z-index:0;opacity:0;background-size:200% 200%;animation:shimmer 6s ease infinite}
+#device.skin-voidGlitter #shimmer{opacity:1}
+.glitter-dot{position:absolute;border-radius:50%;pointer-events:none;z-index:0;opacity:0;animation:sparkle 3s ease-in-out infinite}
+#device.skin-voidGlitter .glitter-dot{opacity:1}
+
+/* Header */
+#header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;padding:0 6px;position:relative;z-index:2}
+#dev-name{font-size:15px;font-weight:bold;letter-spacing:3.5px;color:var(--label);text-shadow:0 0 8px var(--accent1-half)}
+#dev-sub{font-size:6.5px;letter-spacing:2.2px;color:var(--label66);margin-top:1px}
+.hdr-btns{display:flex;gap:5px}
+#btn-power{width:30px;height:22px;border-radius:4px;font-size:6px;font-weight:bold;color:#fff;letter-spacing:.5px;border:2px solid var(--line55)}
+#btn-power.on{background:linear-gradient(180deg,#44ff44,#22aa22);box-shadow:0 0 8px #44ff4444}
+#btn-power.off{background:linear-gradient(180deg,#ff4444,#aa2222);box-shadow:0 0 8px #ff444444}
+#btn-skin{width:38px;height:22px;border-radius:4px;font-size:7px;font-weight:bold;letter-spacing:1px;
+  background:linear-gradient(180deg,var(--accent2),var(--accent1));color:var(--line);border:2px solid var(--line55);
+  box-shadow:0 2px 5px var(--line44),inset 0 1px 0 #ffffff33}
+
+.dots{display:flex;gap:3.5px;justify-content:center;margin-bottom:7px;position:relative;z-index:2}
+.dot{width:2.5px;height:2.5px;border-radius:50%}
+
+/* Main display */
+#main-disp{height:100px;border-radius:6px;padding:10px;margin-bottom:9px;position:relative;overflow:hidden;z-index:2;
+  background:var(--disp-bg);border:2px solid var(--line77);
+  box-shadow:inset 0 2px 10px rgba(0,0,0,0.6),0 0 6px var(--disp-glow);transition:background .4s}
+#main-disp.off{background:#111!important;box-shadow:inset 0 2px 10px rgba(0,0,0,0.8)}
+.disp-scan{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,var(--disp-scan) 2px,var(--disp-scan) 4px)}
+.disp-grid{position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(var(--disp-gridc) 1px,transparent 1px),linear-gradient(90deg,var(--disp-gridc) 1px,transparent 1px);
+  background-size:18px 18px}
+#disp-shimmer{position:absolute;inset:0;pointer-events:none;opacity:0;background-size:200% 200%;animation:shimmer 8s ease infinite}
+#device.skin-voidGlitter #disp-shimmer{opacity:1}
+#disp-content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:center;text-align:center}
+#disp-content .line{font-size:8.5px;line-height:1.55;color:var(--disp-txt);text-shadow:0 0 6px var(--disp-glow)}
+.cursor-blink{display:inline-block;width:6px;height:10px;background:var(--disp-txt);animation:blink .6s step-end infinite;vertical-align:middle}
+#disp-title{font-size:10px;color:var(--disp-txt);letter-spacing:2px;text-shadow:0 0 8px var(--disp-glow);margin-bottom:3px}
+#disp-stats{font-size:8px;color:var(--disp-txt-aa);letter-spacing:1px}
+#disp-sw{font-size:7px;color:var(--disp-txt-66);margin-top:3px}
+#disp-sig{font-size:9px;color:var(--accent1);margin-top:3px;animation:blink .3s step-end 3}
+
+/* Signal receiver */
+#sig-row{display:flex;align-items:center;gap:7px;margin-bottom:9px;padding:0 2px;position:relative;z-index:2;transition:opacity .5s}
+#sig-row.inactive{opacity:.35;pointer-events:none}
+#sig-disp{flex:1;height:24px;border-radius:3px;display:flex;align-items:center;padding:0 7px;overflow:hidden;
+  background:var(--dbg);border:1px solid var(--line55);box-shadow:inset 0 1px 4px rgba(0,0,0,0.5),0 0 4px var(--dglow)}
+#sig-disp.off{background:#111;box-shadow:none}
+#sig-text{font-size:10px;color:var(--dtxt);letter-spacing:2px;text-shadow:0 0 6px var(--dglow);white-space:nowrap;transition:opacity .3s}
+.leds{display:flex;gap:5px}
+.led{width:10px;height:10px;border-radius:50%;transition:all .3s}
+
+/* Modules */
+.module{border-radius:8px;padding:10px 12px;margin-bottom:9px;
+  background:var(--bezel99);border:1px solid var(--line22);transition:opacity .5s}
+.module.inactive{opacity:.35;pointer-events:none}
+.mod-label{font-size:7px;color:var(--label77);letter-spacing:2.5px;margin-bottom:7px;text-transform:uppercase;font-weight:bold}
+
+/* Clicker */
+.clicker-row{display:flex;align-items:center;justify-content:space-between}
+#btn-click{width:60px;height:60px;border-radius:8px;font-size:22px;color:#fff;
+  background:radial-gradient(circle at 38% 32%,var(--accent1-dd),var(--accent1-88));
+  border:3px solid var(--accent1);
+  box-shadow:0 4px 14px var(--accent1-44),inset 0 2px 0 #ffffff30,inset 0 -2px 0 #00000030;transition:transform .08s}
+#btn-click:active{transform:scale(0.91)}
+#click-count{font-size:30px;font-weight:bold;color:var(--dtxt);text-shadow:0 0 10px var(--dglow);letter-spacing:2px}
+#btn-reset{padding:6px 10px;border-radius:4px;background:var(--bezel);border:1px solid var(--line55);
+  color:var(--label99);font-size:8px;letter-spacing:1.5px}
+
+/* Navpad */
+#navpad-info{display:flex;justify-content:space-between;font-size:6.5px;color:var(--label55);margin-bottom:4px;padding:0 2px}
+#crt-wrap{width:100%;aspect-ratio:3/2;border-radius:4px;position:relative;overflow:hidden;margin-bottom:10px;
+  background:#050a05;border:2px solid var(--line55);box-shadow:inset 0 2px 8px rgba(0,0,0,0.7)}
+#crt-wrap.off{background:#111;box-shadow:none}
+#crt{width:100%;height:100%;display:block;image-rendering:pixelated}
+.crt-scanlines{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,#00000018 2px,#00000018 4px)}
+
+#controls-row{display:flex;align-items:center;justify-content:space-around}
+#joystick{width:82px;height:82px;border-radius:50%;
+  background:radial-gradient(circle,#2a2a30,#18181c);border:3px solid var(--line44);
+  box-shadow:inset 0 2px 8px rgba(0,0,0,0.5),0 2px 6px rgba(0,0,0,0.3);
+  position:relative;touch-action:none;display:flex;align-items:center;justify-content:center}
+#joy-stick{width:34px;height:34px;border-radius:50%;
+  background:radial-gradient(circle at 38% 35%,#555,#333);border:2px solid #666;
+  box-shadow:0 3px 8px rgba(0,0,0,0.4),inset 0 1px 0 #888;
+  transition:transform .15s ease-out;display:flex;align-items:center;justify-content:center}
+#joy-stick.active{transition:none}
+#joy-dot{width:8px;height:8px;border-radius:50%;background:radial-gradient(circle,var(--accent1-88),var(--accent1-44))}
+
+#dpad{position:relative;width:82px;height:82px}
+.dpad-btn{position:absolute;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#444,#2a2a2a);border:2px solid var(--line44);
+  color:var(--label99);font-size:11px;
+  box-shadow:0 2px 4px rgba(0,0,0,0.3),inset 0 1px 0 #ffffff11;transition:transform .06s}
+.dpad-btn:active{transform:scale(0.88)}
+.dpad-up{top:0;left:26px;width:30px;height:28px;border-radius:6px 6px 0 0}
+.dpad-down{top:54px;left:26px;width:30px;height:28px;border-radius:0 0 6px 6px}
+.dpad-left{top:26px;left:0;width:28px;height:30px;border-radius:6px 0 0 6px}
+.dpad-right{top:26px;left:54px;width:28px;height:30px;border-radius:0 6px 6px 0}
+.dpad-center{position:absolute;top:26px;left:26px;width:30px;height:30px;background:#222;border:1px solid var(--line22);
+  display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--label44)}
+
+/* Switches */
+#switches{display:flex;justify-content:space-around;margin-bottom:12px}
+.sw-wrap{text-align:center}
+.sw-track{width:26px;height:44px;border-radius:5px;cursor:pointer;position:relative;
+  background:var(--dbg);border:2px solid var(--line55)}
+.sw-thumb{width:20px;height:17px;border-radius:3px;position:absolute;left:1px;top:23px;transition:top .12s ease;
+  background:linear-gradient(180deg,#555,#333);box-shadow:inset 0 1px 3px rgba(0,0,0,0.5)}
+.sw-track.on .sw-thumb{top:2px;background:linear-gradient(180deg,var(--accent1),var(--accent1-99));
+  box-shadow:0 0 5px var(--accent1-55)}
+.sw-track.on{box-shadow:0 0 8px var(--accent1-33)}
+.sw-name{font-size:7px;color:var(--label55);margin-top:3px}
+.sw-num{font-size:5.5px;color:var(--label33);margin-top:1px}
+
+/* Sliders */
+#sliders{display:flex;gap:12px}
+.sl-wrap{flex:1}
+.sl-label{font-size:7px;color:var(--label77);letter-spacing:1px;margin-bottom:3px}
+.sl-outer{position:relative;height:22px;display:flex;align-items:center}
+.sl-track{position:absolute;left:0;right:0;height:6px;border-radius:3px;background:var(--dbg);border:1px solid var(--line33)}
+.sl-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent2-88),var(--accent2));transition:width .05s}
+.sl-input{position:relative;width:100%;height:22px;opacity:0;cursor:pointer;z-index:2;margin:0}
+.sl-thumb{position:absolute;top:2px;width:14px;height:18px;border-radius:3px;
+  background:linear-gradient(180deg,#eee,#aaa);border:2px solid var(--line66);
+  box-shadow:0 2px 4px rgba(0,0,0,0.3);pointer-events:none;z-index:1}
+
+/* Intrusion */
+#hack-btns{display:flex;justify-content:center;gap:10px;margin-bottom:9px}
+#btn-exec{width:80px;height:36px;border-radius:6px;font-size:11px;font-weight:bold;letter-spacing:2px;
+  background:linear-gradient(180deg,#333,#1a1a1a);border:2px solid var(--line55);
+  color:var(--dtxt);transition:transform .08s}
+#btn-exec:active{transform:scale(0.93)}
+#btn-exec.running{background:linear-gradient(180deg,#cc2222,#881111);border-color:var(--accent1-55);
+  box-shadow:0 0 14px var(--accent1-33);text-shadow:0 0 6px var(--dglow)}
+#btn-exec.done{background:linear-gradient(180deg,var(--accent2),var(--accent2-88));color:var(--line)}
+#btn-purge{width:68px;height:36px;border-radius:6px;font-size:7px;font-weight:bold;letter-spacing:1.5px;
+  background:linear-gradient(180deg,#222,#111);border:1px solid var(--line33);
+  color:var(--label33);transition:transform .08s,color .3s}
+#btn-purge:active{transform:scale(0.93)}
+#btn-purge.has-logs{color:#ff6644}
+#hack-term{height:78px;overflow:hidden;border-radius:3px;padding:4px 6px;margin-bottom:8px;
+  background:var(--dbg);border:1px solid var(--line44);box-shadow:inset 0 1px 5px rgba(0,0,0,0.5)}
+#hack-term.off{background:#111}
+.hlog{font-size:7.5px;line-height:1.35;color:var(--dtxt-77);text-shadow:0 0 4px var(--dglow)}
+.hlog.latest{color:var(--dtxt-ee)}
+.hlog.old{color:var(--dtxt-55)}
+.hlog.msg{color:var(--accent2);font-weight:bold;text-shadow:0 0 8px var(--accent2);font-size:9px}
+.hlog.idle{color:var(--dtxt-33);font-size:8px;padding:3px}
+#hack-bars{display:flex;gap:8px}
+.bar-wrap{flex:1}
+.bar-label{font-size:6px;letter-spacing:1px;margin-bottom:2px}
+.bar-outer{height:8px;border-radius:2px;overflow:hidden;background:var(--dbg)}
+.bar-fill{height:100%;transition:width .08s linear}
+#bar-a-label{color:var(--bar-a-99)}
+#bar-a-outer{border:1px solid var(--bar-a-33)}
+#bar-a{background:linear-gradient(90deg,var(--bar-a-bg),var(--bar-a))}
+#bar-b-label{color:var(--bar-b-label)}
+#bar-b-outer{border:1px solid var(--bar-b-border)}
+#bar-b{background:var(--bar-b)}
+
+#footer{text-align:center;margin-top:9px;font-size:6px;color:var(--label44);letter-spacing:2.5px;position:relative;z-index:2}
+
+@keyframes blink{50%{opacity:0}}
+@keyframes shimmer{0%{background-position:0% 0%}50%{background-position:100% 100%}100%{background-position:0% 0%}}
+@keyframes sparkle{0%,100%{opacity:0;transform:scale(.6)}50%{opacity:1;transform:scale(1.2)}}
+</style>
+</head>
+<body>
+<div id="device">
+  <div class="edge-line"></div>
+  <div class="vert-line vert-l"></div>
+  <div class="vert-line vert-r"></div>
+  <div class="screw s-tl"></div><div class="screw s-tr"></div>
+  <div class="screw s-bl"></div><div class="screw s-br"></div>
+  <div id="shimmer"></div>
+  <div id="glitter-container"></div>
+
+  <div id="header">
+    <div><div id="dev-name">DENDRITE-9</div><div id="dev-sub">/// NEURAL INTERFACE v0.9.5 ///</div></div>
+    <div class="hdr-btns"><button id="btn-power" class="on">ON</button><button id="btn-skin">SKIN</button></div>
+  </div>
+  <div class="dots" id="dots"></div>
+
+  <div id="main-disp">
+    <div class="disp-scan" id="disp-scan"></div>
+    <div class="disp-grid"></div>
+    <div id="disp-shimmer"></div>
+    <div id="disp-content"></div>
+  </div>
+
+  <div id="sig-row">
+    <div id="sig-disp"><span id="sig-text">▸ AWAITING SIGNAL...</span></div>
+    <div class="leds"><div class="led" id="led-0"></div><div class="led" id="led-1"></div><div class="led" id="led-2"></div></div>
+  </div>
+
+  <div class="module" id="mod-clicker">
+    <div class="mod-label">◈ CLICKER MODULE</div>
+    <div class="clicker-row">
+      <button id="btn-click">⬡</button>
+      <div id="click-count">00000</div>
+      <button id="btn-reset">RESET</button>
+    </div>
+  </div>
+
+  <div class="module" id="mod-navpad">
+    <div class="mod-label">◈ NAVPAD /// PHOSPHOR DISPLAY</div>
+    <div id="navpad-info"><span id="nav-speed">1 CLICK = 1 CELL</span><span id="nav-mode">◈ NORMAL</span></div>
+    <div id="crt-wrap"><canvas id="crt"></canvas><div class="crt-scanlines"></div></div>
+    <div id="controls-row">
+      <div id="joystick"><div id="joy-stick"><div id="joy-dot"></div></div></div>
+      <div id="dpad">
+        <button class="dpad-btn dpad-up" data-dx="0" data-dy="-1">▲</button>
+        <button class="dpad-btn dpad-down" data-dx="0" data-dy="1">▼</button>
+        <button class="dpad-btn dpad-left" data-dx="-1" data-dy="0">◀</button>
+        <button class="dpad-btn dpad-right" data-dx="1" data-dy="0">▶</button>
+        <div class="dpad-center">◎</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="module" id="mod-control">
+    <div class="mod-label">◈ CONTROL BANK</div>
+    <div id="switches"></div>
+    <div id="sliders"></div>
+  </div>
+
+  <div class="module" id="mod-intrusion">
+    <div class="mod-label">◈ INTRUSION MODULE</div>
+    <div id="hack-btns"><button id="btn-exec">[EXEC]</button><button id="btn-purge">PURGE</button></div>
+    <div id="hack-term"></div>
+    <div id="hack-bars">
+      <div class="bar-wrap"><div class="bar-label" id="bar-a-label">STREAM_A</div><div class="bar-outer" id="bar-a-outer"><div class="bar-fill" id="bar-a"></div></div></div>
+      <div class="bar-wrap"><div class="bar-label" id="bar-b-label">STREAM_B</div><div class="bar-outer" id="bar-b-outer"><div class="bar-fill" id="bar-b"></div></div></div>
+    </div>
+  </div>
+
+  <div id="footer"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  DENDRITE-9 /// v0.9.5 /// Vanilla JS + Canvas + PWA
+//  Co-designed by Eos Vesper × Legion
+// ═══════════════════════════════════════════════════════
+
+// ── PWA Registration ──
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
+
+// ── Audio ──
+let _ac=null;
+const ac=()=>{if(!_ac)_ac=new(window.AudioContext||window.webkitAudioContext)();if(_ac.state==='suspended')_ac.resume();return _ac};
+const snd=(f,t='square',d=.04,v=.12)=>{try{const c=ac(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type=t;g.gain.setValueAtTime(v,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.start(c.currentTime);o.stop(c.currentTime+d+.01)}catch(e){}};
+const sfx={
+  click:()=>snd(900+Math.random()*300,'square',.04,.13),
+  sw:()=>snd(1400,'square',.025,.1),
+  beep:()=>{snd(880,'square',.09,.1);setTimeout(()=>snd(1100,'square',.09,.1),110)},
+  sig:()=>snd(500+Math.random()*250,'sine',.18,.07),
+  noise:(d=.06,v=.06)=>{try{const c=ac(),n=c.sampleRate*d,b=c.createBuffer(1,n,c.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*v;const s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start()}catch(e){}},
+  boot:()=>snd(660,'sawtooth',.06,.06),
+  move:()=>snd(1800+Math.random()*600,'triangle',.018,.035),
+  reward:()=>{snd(660,'sine',.08,.1);setTimeout(()=>snd(880,'sine',.08,.1),80);setTimeout(()=>snd(1100,'sine',.12,.08),160)},
+  off:()=>{snd(440,'sawtooth',.15,.08);setTimeout(()=>snd(220,'sawtooth',.2,.06),100)},
+  on:()=>snd(330,'sawtooth',.08,.07),
+  purge:()=>{snd(200,'sawtooth',.1,.08);setTimeout(()=>snd(150,'sawtooth',.15,.06),80)},
+};
+
+// ── Skins ──
+const SKINS=[
+  {id:'toxicReef',name:'TOXIC REEF',
+    body:'linear-gradient(155deg,#0dd6d6,#0a9a9a 35%,#077a7a 70%,#066a6a)',bezel:'#055555',
+    accent1:'#ff2d8a',accent2:'#ffe13a',dbg:'#060e06',dtxt:'#33ff33',dglow:'#33ff3366',
+    dispBg:'#060e06',dispTxt:'#33ff33',dispGlow:'#33ff3366',dispScan:'#33ff3306',dispGrid:'#33ff3308',
+    leds:['#ffe13a','#44ddff','#ff2d8a'],line:'#000000',screw:'#033',label:'#cff',
+    barA:'#33ff33',barABg:'#114411',barB:'linear-gradient(90deg,#331800,#ff8800,#ffaa22)',barBBorder:'#ff880033',barBLabel:'#ff880099',
+    cursor:'#33ff33',pellet:'#ff2d8a',glitter:false,shimmer:'',dispShimmer:''},
+  {id:'solarCorruption',name:'SOLAR CORRUPTION',
+    body:'linear-gradient(155deg,#5a5a66,#3e3e4a 35%,#2a2a35 70%,#202028)',bezel:'#2a2a35',
+    accent1:'#00ffcc',accent2:'#ff44aa',dbg:'#1a1408',dtxt:'#ff9922',dglow:'#ff882255',
+    dispBg:'#ff9922',dispTxt:'#1a1000',dispGlow:'#ff882233',dispScan:'#1a100008',dispGrid:'#1a100006',
+    leds:['#ffcc00','#00ccff','#ff3344'],line:'#00ffcc',screw:'#1a1a22',label:'#bbb',
+    barA:'#00ffcc',barABg:'#0a332a',barB:'linear-gradient(90deg,#ff44aa,#ff88cc,#ffaadd)',barBBorder:'#ff44aa33',barBLabel:'#ff44aa99',
+    cursor:'#00ffcc',pellet:'#ff44aa',glitter:false,shimmer:'',dispShimmer:''},
+  {id:'bubblegumTerminal',name:'BUBBLEGUM TERMINAL',
+    body:'linear-gradient(155deg,#ff55bb,#dd2288 35%,#bb1870 70%,#991160)',bezel:'#881155',
+    accent1:'#00ddff',accent2:'#88ff44',dbg:'#120a00',dtxt:'#ffaa22',dglow:'#ffaa2255',
+    dispBg:'#120a00',dispTxt:'#ffaa22',dispGlow:'#ffaa2255',dispScan:'#ffaa2206',dispGrid:'#ffaa2208',
+    leds:['#ffe13a','#44ddff','#ff4455'],line:'#000000',screw:'#550033',label:'#ffd4e8',
+    barA:'#00ddff',barABg:'#0a2a33',barB:'linear-gradient(90deg,#88ff44,#ccff77,#eeffaa)',barBBorder:'#88ff4433',barBLabel:'#88ff4499',
+    cursor:'#00ddff',pellet:'#88ff44',glitter:false,shimmer:'',dispShimmer:''},
+  {id:'voidGlitter',name:'VOID GLITTER',
+    body:'linear-gradient(155deg,#0e0e14,#12081e 35%,#0a0a12 70%,#080610)',bezel:'#0c0818',
+    accent1:'#bb44ff',accent2:'#44ffaa',dbg:'#08060e',dtxt:'#aa66ff',dglow:'#aa44ff44',
+    dispBg:'#08060e',dispTxt:'#aa66ff',dispGlow:'#9944ff33',dispScan:'#aa44ff06',dispGrid:'#aa44ff08',
+    leds:['#bb44ff','#44ffaa','#ff44bb'],line:'#bb44ff',screw:'#1a0a2a',label:'#d4bbff',
+    barA:'#44ffaa',barABg:'#0a2a1a',barB:'linear-gradient(90deg,#6600cc,#bb44ff,#dd88ff)',barBBorder:'#bb44ff33',barBLabel:'#bb44ff99',
+    cursor:'#aa66ff',pellet:'#44ffaa',glitter:true,
+    shimmer:'linear-gradient(135deg,transparent 0%,#ffffff06 25%,transparent 50%,#bb44ff08 75%,transparent 100%)',
+    dispShimmer:'linear-gradient(135deg,transparent 0%,#bb44ff0a 40%,transparent 60%,#44ffaa08 80%,transparent 100%)'},
+];
+
+const SIGILS='⌬◈⏣⎔⏢◇△▽⬡⬢◎⊛⊕⊗⟁⧫⌖☿♄⚶'.split('');
+const HACK_MSGS=['SCANNING TARGET PORTS...','SSH:22 OPEN — BRUTE FORCING','INJECTING PAYLOAD 0xDEAD','CRACKING AES-256 LAYER...','BYPASSING FIREWALL NODE','ROOT ACCESS: PENDING','EXTRACTING AUTH TOKENS','DECRYPTING RSA KEYCHAIN','SPOOFING MAC ADDRESS...','INTERCEPTING HANDSHAKE','OVERWRITING BOOTLOADER','IMPLANT SYNC: 47.3%','NEURAL BRIDGE: PROBING','CORTEX FIREWALL: WEAK','DUMPING MEMORY SECTOR 7F','KEYLOGGER DEPLOYED','BACKDOOR INSTALLED @ :4444','PRIVILEGE ESCALATION...','SYSCTL OVERRIDE ACTIVE','ROUTING THRU TOR NODE'];
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pad=(n,l=5)=>String(n).padStart(l,'0');
+const bin=()=>Array.from({length:8},()=>Math.round(Math.random())).join('');
+const CW=24,CH=16,PLIFE=14000,PBLINK=11000;
+
+// ── State ──
+const S={si:0,power:true,booting:true,bootLines:[],
+  clicks:0,sw:[false,false,false,false],
+  sl1:50,sl2:50,
+  sigText:'',sigLed:-1,
+  hack:'idle',hackLog:[],b1:0,b2:0,
+  cx:12,cy:8,trail:[],ghost:[],pellets:[],
+  joyActive:false,joyX:0,joyY:0,
+  hackMsgIdx:0};
+
+// ── DOM refs ──
+const $=id=>document.getElementById(id);
+const dev=$('device'),mainDisp=$('main-disp'),dispContent=$('disp-content'),
+  dispScan=$('disp-scan'),dispShimmerEl=$('disp-shimmer'),shimmerEl=$('shimmer'),
+  sigRow=$('sig-row'),sigDisp=$('sig-disp'),sigTextEl=$('sig-text'),
+  crtWrap=$('crt-wrap'),crt=$('crt'),ctxCrt=crt.getContext('2d'),
+  hackTerm=$('hack-term'),barA=$('bar-a'),barB=$('bar-b'),
+  btnExec=$('btn-exec'),btnPurge=$('btn-purge'),
+  btnPower=$('btn-power'),btnSkin=$('btn-skin'),btnClick=$('btn-click'),btnReset=$('btn-reset'),
+  clickCount=$('click-count'),footerEl=$('footer'),
+  joyEl=$('joystick'),joyStick=$('joy-stick'),
+  navSpeed=$('nav-speed'),navMode=$('nav-mode');
+
+// Build dots
+const dotsEl=$('dots');
+for(let i=0;i<14;i++){const d=document.createElement('div');d.className='dot';dotsEl.appendChild(d);}
+
+// Build switches
+const swEl=$('switches');const swTracks=[],swThumbs=[];
+['TRC','SPD','GHO','INV'].forEach((name,i)=>{
+  const w=document.createElement('div');w.className='sw-wrap';
+  w.innerHTML=`<div class="sw-track" id="sw-${i}"><div class="sw-thumb"></div></div><div class="sw-name">${name}</div><div class="sw-num">SW${i+1}</div>`;
+  swEl.appendChild(w);
+  swTracks.push(w.querySelector('.sw-track'));
+  swThumbs.push(w.querySelector('.sw-thumb'));
+  w.querySelector('.sw-track').onclick=()=>{if(!live())return;toggleSw(i)};
+});
+
+// Build sliders
+const slEl=$('sliders');const slFills=[],slThumbs2=[],slLabels=[];
+[{name:'NOISE',key:'sl1'},{name:'SCAN',key:'sl2'}].forEach(({name,key})=>{
+  const w=document.createElement('div');w.className='sl-wrap';
+  w.innerHTML=`<div class="sl-label" id="lbl-${key}">${name}: 50%</div><div class="sl-outer"><div class="sl-track"><div class="sl-fill" id="fill-${key}"></div></div><input type="range" min="0" max="100" value="50" class="sl-input" id="inp-${key}"><div class="sl-thumb" id="thumb-${key}"></div></div>`;
+  slEl.appendChild(w);
+  slFills.push($(`fill-${key}`));slThumbs2.push($(`thumb-${key}`));slLabels.push($(`lbl-${key}`));
+  const inp=$(`inp-${key}`);
+  let retIv=null;
+  inp.oninput=()=>{if(!live())return;S[key]=+inp.value;if(retIv)clearInterval(retIv);updateSlider(key)};
+  const retFn=()=>{retIv=setInterval(()=>{const d=50-S[key];if(Math.abs(d)<.5){clearInterval(retIv);S[key]=50}else S[key]+=d*.07;inp.value=S[key];updateSlider(key)},25)};
+  inp.onpointerup=retFn;inp.ontouchend=retFn;
+});
+
+// Build glitter particles
+const glitCont=$('glitter-container');
+for(let i=0;i<28;i++){
+  const d=document.createElement('div');d.className='glitter-dot';
+  const hues=['#bb44ff','#44ffaa','#ffffff'];
+  Object.assign(d.style,{
+    left:(7+Math.random()*86)+'%',top:(3+Math.random()*94)+'%',
+    width:(2+Math.random()*2.5)+'px',height:(2+Math.random()*2.5)+'px',
+    background:`radial-gradient(circle,${hues[i%3]}bb,${hues[i%3]}00)`,
+    animationDelay:(Math.random()*5).toFixed(2)+'s',
+    animationDuration:(2+Math.random()*3).toFixed(2)+'s',
+  });
+  glitCont.appendChild(d);
+}
+
+// ── Canvas setup ──
+const CRT_PX=12;// pixels per cell
+crt.width=CW*CRT_PX;crt.height=CH*CRT_PX;
+
+// ── Skin application ──
+function applySkin(){
+  const s=SKINS[S.si],r=document.documentElement.style,d=dev;
+  // Remove all skin classes, add current
+  SKINS.forEach(sk=>d.classList.remove('skin-'+sk.id));
+  d.classList.add('skin-'+s.id);
+  const sv=(n,v)=>r.setProperty(n,v);
+  sv('--body',s.body);sv('--bezel',s.bezel);sv('--bezel99',s.bezel+'99');
+  sv('--accent1',s.accent1);sv('--accent2',s.accent2);
+  sv('--accent1-dd',s.accent1+'dd');sv('--accent1-88',s.accent1+'88');sv('--accent1-44',s.accent1+'44');
+  sv('--accent1-55',s.accent1+'55');sv('--accent1-33',s.accent1+'33');sv('--accent1-99',s.accent1+'99');
+  sv('--accent1-half',s.accent1+'55');
+  sv('--accent2-88',s.accent2+'88');
+  sv('--dbg',s.dbg);sv('--dtxt',s.dtxt);sv('--dglow',s.dglow);
+  sv('--dtxt-77',s.dtxt+'77');sv('--dtxt-ee',s.dtxt+'ee');sv('--dtxt-55',s.dtxt+'55');sv('--dtxt-33',s.dtxt+'33');
+  sv('--disp-bg',s.dispBg);sv('--disp-txt',s.dispTxt);sv('--disp-glow',s.dispGlow);
+  sv('--disp-scan',s.dispScan);sv('--disp-gridc',s.dispGrid);
+  sv('--disp-txt-aa',s.dispTxt+'aa');sv('--disp-txt-66',s.dispTxt+'66');
+  sv('--line',s.line);sv('--line10',s.line+'10');sv('--line22',s.line+'22');sv('--line25',s.line+'25');
+  sv('--line33',s.line+'33');sv('--line44',s.line+'44');sv('--line55',s.line+'55');sv('--line66',s.line+'66');
+  sv('--line77',s.line+'77');
+  sv('--label',s.label);sv('--label33',s.label+'33');sv('--label44',s.label+'44');
+  sv('--label55',s.label+'55');sv('--label66',s.label+'66');sv('--label77',s.label+'77');sv('--label99',s.label+'99');
+  sv('--bar-a',s.barA);sv('--bar-a-bg',s.barABg);sv('--bar-a-33',s.barA+'33');sv('--bar-a-99',s.barA+'99');
+  sv('--bar-b',s.barB);sv('--bar-b-border',s.barBBorder);sv('--bar-b-label',s.barBLabel);
+  // Screw colors
+  document.querySelectorAll('.screw').forEach(sc=>sc.style.background=`radial-gradient(circle at 35% 35%,#ffffff22,${s.screw})`);
+  // Dots colors
+  dotsEl.querySelectorAll('.dot').forEach((d,i)=>d.style.background=i%4===0?s.accent1+'77':i%4===2?s.accent2+'55':s.line+'33');
+  // Shimmer
+  shimmerEl.style.background=s.shimmer||'none';shimmerEl.style.backgroundSize='200% 200%';
+  dispShimmerEl.style.background=s.dispShimmer||'none';dispShimmerEl.style.backgroundSize='200% 200%';
+  // LEDs base
+  [0,1,2].forEach(i=>{const l=$(`led-${i}`);l.style.background=s.leds[i]+'22';l.style.border=`1px solid ${s.leds[i]}55`});
+  footerEl.textContent=`/// DENDRITE-9 /// ${s.name} /// MFG.2026 ///`;
+}
+
+function live(){return S.power&&!S.booting}
+
+// ── Skin / Power ──
+btnSkin.onclick=()=>{S.si=(S.si+1)%SKINS.length;applySkin();sfx.sw();triggerGlitch()};
+btnPower.onclick=()=>{
+  if(S.power){
+    S.power=false;S.booting=true;clearInterval(bootIv);S.bootLines=[];sfx.off();
+    stopHackTimers();S.hack='idle';S.hackLog=[];S.b1=0;S.b2=0;
+    updatePowerState();
+  }else{
+    S.power=true;sfx.on();
+    updatePowerState();
+    setTimeout(runBoot,200);
+  }
+};
+
+function updatePowerState(){
+  btnPower.className=S.power?'on':'off';
+  btnPower.textContent=S.power?'ON':'OFF';
+  mainDisp.classList.toggle('off',!S.power);
+  sigDisp.classList.toggle('off',!S.power);
+  crtWrap.classList.toggle('off',!S.power);
+  hackTerm.classList.toggle('off',!S.power);
+  const inact=!live();
+  sigRow.classList.toggle('inactive',inact);
+  ['mod-clicker','mod-navpad','mod-control','mod-intrusion'].forEach(id=>$(id).classList.toggle('inactive',inact));
+  updateDisplay();updateHackUI();
+}
+
+// ── Boot ──
+let bootIv=null;
+function runBoot(){
+  S.booting=true;S.bootLines=[];
+  const lines=['DENDRITE-9 NEURAL INTERFACE v0.9.5','BIOS CHECK.......... OK','MEMORY: 2048K ✓','SCANNING CORTICAL PORTS...','PORT A: LINKED  PORT B: STANDBY','CALIBRATING SYNAPTIC MESH...','>> CLICKER  [OK]  >> NAVPAD  [OK]','>> CONTROL  [OK]  >> INTRUS. [OK]','HANDSHAKE COMPLETE ◈','WELCOME, OPERATOR_'];
+  let i=0;
+  bootIv=setInterval(()=>{
+    if(i<lines.length){S.bootLines.push(lines[i]);sfx.boot();i++;updateDisplay();}
+    else{clearInterval(bootIv);setTimeout(()=>{S.booting=false;updatePowerState()},600)}
+  },190);
+}
+
+function updateDisplay(){
+  if(!S.power){dispContent.innerHTML='';return}
+  if(S.booting){
+    const vis=S.bootLines.slice(-6);
+    dispContent.innerHTML=vis.map(l=>`<div class="line">${l}</div>`).join('')+'<span class="cursor-blink"></span>';
+    dispContent.style.justifyContent='flex-end';
+  }else{
+    const s=SKINS[S.si];
+    dispContent.style.justifyContent='center';
+    dispContent.innerHTML=`<div id="disp-title">◈ SYSTEM ACTIVE ◈</div><div id="disp-stats">CLICK: ${pad(S.clicks)} &nbsp;|&nbsp; POS: ${S.cx},${S.cy}</div><div id="disp-sw">SW: [${S.sw.map(v=>v?'■':'□').join('')}] &nbsp; N:${(S.sl1).toFixed(0)}% &nbsp; S:${((0.5+S.sl2/100*2)*33).toFixed(0)}%</div>`;
+  }
+}
+
+// ── Glitch ──
+let glitchTid=null;
+function schedGlitch(){
+  if(!live())return;
+  glitchTid=setTimeout(()=>{triggerGlitch();schedGlitch()},rnd(15000,35000));
+}
+function triggerGlitch(){dev.classList.add('glitch');sfx.noise(.08,.07);setTimeout(()=>dev.classList.remove('glitch'),130+Math.random()*140)}
+
+// ── Signal receiver ──
+let sigTid=null;
+function schedSig(){
+  if(!live())return;
+  sigTid=setTimeout(()=>{
+    const isSig=Math.random()>.45;
+    S.sigText=isSig?Array.from({length:3+Math.floor(Math.random()*4)},()=>SIGILS[Math.floor(Math.random()*SIGILS.length)]).join(' '):Array.from({length:2+Math.floor(Math.random()*3)},bin).join(' ');
+    S.sigLed=Math.floor(Math.random()*3);
+    sfx.sig();updateSigUI();
+    setTimeout(()=>{S.sigText='';S.sigLed=-1;updateSigUI()},rnd(1800,3200));
+    schedSig();
+  },rnd(3500,9000));
+}
+function updateSigUI(){
+  sigTextEl.textContent=S.sigText||'▸ AWAITING SIGNAL...';
+  sigTextEl.style.opacity=S.sigText?1:.25;
+  const s=SKINS[S.si];
+  [0,1,2].forEach(i=>{
+    const l=$(`led-${i}`),on=live()&&S.sigLed===i;
+    l.style.background=on?s.leds[i]:s.leds[i]+'22';
+    l.style.boxShadow=on?`0 0 8px ${s.leds[i]},0 0 14px ${s.leds[i]}55`:'none';
+  });
+}
+
+// ── Clicker ──
+btnClick.onclick=()=>{if(!live())return;S.clicks++;sfx.click();clickCount.textContent=pad(S.clicks);updateDisplay()};
+btnReset.onclick=()=>{if(!live())return;S.clicks=0;sfx.noise();clickCount.textContent=pad(0);updateDisplay()};
+
+// ── Switches ──
+function toggleSw(i){
+  S.sw[i]=!S.sw[i];sfx.sw();
+  swTracks[i].classList.toggle('on',S.sw[i]);
+  if(i===0&&!S.sw[0]){S.trail=[];S.ghost=[]}
+  updateNavInfo();updateDisplay();
+}
+function updateNavInfo(){
+  navSpeed.textContent=`1 CLICK = ${S.sw[1]?'2':'1'} CELL${S.sw[1]?'S':''}`;
+  navMode.textContent=S.sw[1]?'◈ TURBO':'◈ NORMAL';
+}
+
+// ── Sliders ──
+function updateSlider(key){
+  const i=key==='sl1'?0:1,v=S[key];
+  slFills[i].style.width=v+'%';
+  slThumbs2[i].style.left=`calc(${v}% - 7px)`;
+  slLabels[i].textContent=`${i===0?'NOISE':'SCAN'}: ${v.toFixed(0)}%`;
+  dispScan.style.opacity=(.4+S.sl1/100*.6);
+  dispScan.style.animationDuration=(3.5/(.5+S.sl2/100*2))+'s';
+  updateDisplay();
+}
+
+// ── Pellets ──
+let pelletIv=null;
+function spawnPellet(){
+  const now=performance.now();
+  S.pellets=S.pellets.filter(p=>now-p.t<PLIFE);
+  if(S.pellets.length>=3)return;
+  let x,y,tries=0;
+  do{x=Math.floor(Math.random()*CW);y=Math.floor(Math.random()*CH);tries++}
+  while(tries<20&&(S.pellets.some(p=>p.x===x&&p.y===y)||(Math.abs(x-S.cx)<2&&Math.abs(y-S.cy)<2)));
+  S.pellets.push({x,y,t:now});
+}
+function startPellets(){
+  spawnPellet();
+  pelletIv=setInterval(()=>{
+    const now=performance.now();
+    S.pellets=S.pellets.filter(p=>now-p.t<PLIFE);
+    if(S.pellets.length<1)spawnPellet();
+    else if(S.pellets.length<3&&Math.random()>.6)spawnPellet();
+  },1200);
+}
+function checkEat(cx,cy){
+  const now=performance.now(),before=S.pellets.length;
+  S.pellets=S.pellets.filter(p=>!(p.x===cx&&p.y===cy&&now-p.t<PLIFE));
+  if(S.pellets.length<before)sfx.reward();
+}
+
+// ── CRT Canvas Rendering ──
+function drawCRT(){
+  const s=SKINS[S.si],c=ctxCrt,pw=CRT_PX,ph=CRT_PX,now=performance.now();
+  c.clearRect(0,0,crt.width,crt.height);
+  if(!S.power){return}
+  // Grid
+  c.strokeStyle='#ffffff0d';c.lineWidth=.5;
+  for(let x=0;x<=CW;x++){c.beginPath();c.moveTo(x*pw,0);c.lineTo(x*pw,CH*ph);c.stroke()}
+  for(let y=0;y<=CH;y++){c.beginPath();c.moveTo(0,y*ph);c.lineTo(CW*pw,y*ph);c.stroke()}
+  if(!live())return;
+  // Ghost trail
+  if(S.sw[2]){
+    S.ghost.filter(p=>p.t<=now).forEach(p=>{
+      c.fillStyle=s.cursor+'22';c.fillRect(p.x*pw,p.y*ph,pw,ph);
+    });
+  }
+  // Trail
+  S.trail.forEach(p=>{
+    const age=S.sw[0]?1:Math.max(0,1-(now-p.t)/2500);
+    if(age<=0)return;
+    const a=Math.round(age*100*.4).toString(16).padStart(2,'0');
+    c.fillStyle=s.cursor+a;c.fillRect(p.x*pw,p.y*ph,pw,ph);
+    if(age>.5){c.fillStyle=s.cursor+'11';c.fillRect(p.x*pw-1,p.y*ph-1,pw+2,ph+2)}
+  });
+  // Pellets
+  S.pellets.forEach(p=>{
+    const age=now-p.t,blink=age>PBLINK&&Math.floor(now/175)%2===0;
+    if(!blink){
+      c.fillStyle=s.pellet+'44';c.fillRect(p.x*pw-2,p.y*ph-2,pw+4,ph+4);
+      c.fillStyle=s.pellet;c.fillRect(p.x*pw,p.y*ph,pw,ph);
+    }
+  });
+  // Cursor
+  c.fillStyle=s.cursor+'33';c.fillRect(S.cx*pw-2,S.cy*ph-2,pw+4,ph+4);
+  c.fillStyle=s.cursor;c.fillRect(S.cx*pw,S.cy*ph,pw,ph);
+}
+
+// ── D-pad ──
+function dpadStep(dx,dy){
+  const inv=S.sw[3]?-1:1;
+  const nx=Math.max(0,Math.min(CW-1,S.cx+dx*inv));
+  const ny=Math.max(0,Math.min(CH-1,S.cy+dy*inv));
+  S.cx=nx;S.cy=ny;
+  const now=performance.now();
+  S.trail.push({x:nx,y:ny,t:now});
+  if(S.sw[2])S.ghost.push({x:nx,y:ny,t:now+400});
+  checkEat(nx,ny);
+}
+function dpadExec(dx,dy){
+  sfx.move();dpadStep(dx,dy);
+  if(S.sw[1])setTimeout(()=>dpadStep(dx,dy),35);
+  updateDisplay();
+}
+let dpadHeld={dx:0,dy:0,active:false},dpadIv=null;
+document.querySelectorAll('.dpad-btn').forEach(btn=>{
+  const dx=+btn.dataset.dx,dy=+btn.dataset.dy;
+  btn.onpointerdown=e=>{
+    e.preventDefault();if(!live())return;
+    dpadExec(dx,dy);dpadHeld={dx,dy,active:true};
+    if(dpadIv)clearInterval(dpadIv);
+    dpadIv=setInterval(()=>{if(dpadHeld.active)dpadExec(dpadHeld.dx,dpadHeld.dy);else clearInterval(dpadIv)},S.sw[1]?75:150);
+  };
+  btn.onpointerup=btn.onpointerleave=btn.onpointercancel=()=>{dpadHeld.active=false;if(dpadIv)clearInterval(dpadIv)};
+});
+
+// ── Joystick ──
+joyEl.onpointerdown=e=>{e.preventDefault();S.joyActive=true;joyStick.classList.add('active');joyMove(e)};
+joyEl.onpointermove=e=>{if(!S.joyActive)return;e.preventDefault();joyMove(e)};
+joyEl.onpointerup=joyEl.onpointercancel=joyEl.onpointerleave=()=>{
+  S.joyActive=false;S.joyX=0;S.joyY=0;
+  joyStick.style.transform='translate(0,0)';joyStick.classList.remove('active');
+};
+function joyMove(e){
+  const r=joyEl.getBoundingClientRect();
+  const cx=r.left+r.width/2,cy=r.top+r.height/2;
+  const px=e.touches?e.touches[0].clientX:e.clientX;
+  const py=e.touches?e.touches[0].clientY:e.clientY;
+  let dx=(px-cx)/(r.width/2),dy=(py-cy)/(r.height/2);
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist>1){dx/=dist;dy/=dist}
+  S.joyX=dx;S.joyY=dy;
+  joyStick.style.transform=`translate(${dx*14}px,${dy*14}px)`;
+}
+
+// ── Hack / Intrusion ──
+let hackIv=null,hackB1Iv=null,hackB2Iv=null,hackTout=null;
+function stopHackTimers(){clearInterval(hackIv);clearInterval(hackB1Iv);clearInterval(hackB2Iv);clearTimeout(hackTout)}
+function startHack(){
+  stopHackTimers();
+  if(S.hack!=='done')S.hackLog=[];
+  S.hack='running';S.b1=0;S.b2=0;sfx.beep();
+  hackIv=setInterval(()=>{
+    if(S.hackLog.length>80)return;
+    const r=Math.random();let line;
+    if(r<.25){line=HACK_MSGS[S.hackMsgIdx%HACK_MSGS.length];S.hackMsgIdx++}
+    else if(r<.55)line='0x'+Math.floor(Math.random()*0xFFFFFFFF).toString(16).toUpperCase().padStart(8,'0')+' '+bin()+' '+bin()+' '+bin();
+    else if(r<.8)line=Array.from({length:4+Math.floor(Math.random()*3)},bin).join(' ');
+    else line='['+[0,0,0,0].map(()=>Math.floor(Math.random()*256)).join('.')+'] ACK '+bin();
+    S.hackLog.push(line);updateHackUI();
+  },95);
+  const t1=rnd(3000,7000),t2=rnd(3000,7000);
+  hackB1Iv=setInterval(()=>{S.b1=Math.min(100,S.b1+100/(t1/50));barA.style.width=S.b1+'%';if(S.b1>=100)clearInterval(hackB1Iv)},50);
+  hackB2Iv=setInterval(()=>{S.b2=Math.min(100,S.b2+100/(t2/50));barB.style.width=S.b2+'%';if(S.b2>=100)clearInterval(hackB2Iv)},50);
+  hackTout=setTimeout(()=>{stopHackTimers();S.b1=100;S.b2=100;S.hack='done';barA.style.width='100%';barB.style.width='100%';sfx.beep();setTimeout(sfx.beep,250);updateHackUI()},Math.max(t1,t2)+400);
+  updateHackUI();
+}
+function purgeHack(){stopHackTimers();S.hack='idle';S.hackLog=[];S.b1=0;S.b2=0;barA.style.width='0%';barB.style.width='0%';sfx.purge();updateHackUI()}
+function updateHackUI(){
+  // Button states
+  btnExec.className=S.hack==='running'?'running':S.hack==='done'?'done':'';
+  btnExec.textContent=S.hack==='done'?'▸ EXEC':S.hack==='running'?'▸▸▸':'[EXEC]';
+  btnPurge.className=S.hackLog.length>0?'has-logs':'';
+  // Terminal
+  if(S.hackLog.length===0&&live()){
+    hackTerm.innerHTML='<div class="hlog idle">▸ AWAITING EXEC_</div>';
+  }else{
+    const vis=S.hackLog.slice(-8);
+    let html=vis.map((ln,i)=>{
+      const cls=S.hack==='done'&&i<vis.length-1?'hlog old':i===vis.length-1?'hlog latest':'hlog';
+      return `<div class="${cls}">${ln}</div>`;
+    }).join('');
+    if(S.hack==='done')html+='<div class="hlog msg">▸▸ ACCESS GRANTED ◈ ROOT ◂◂</div>';
+    hackTerm.innerHTML=html;
+  }
+}
+btnExec.onclick=()=>{if(!live())return;if(S.hack==='idle'||S.hack==='done')startHack()};
+btnPurge.onclick=()=>{if(!live())return;purgeHack()};
+
+// ── Main Loop ──
+let lastT=performance.now();
+function mainLoop(now){
+  const dt=Math.min((now-lastT)/1000,.05);lastT=now;
+  if(live()){
+    // Joystick movement
+    if(S.joyActive&&(Math.abs(S.joyX)>.05||Math.abs(S.joyY)>.05)){
+      const inv=S.sw[3]?-1:1,spd=14*dt*(S.sw[1]?2:1);
+      const nx=Math.max(0,Math.min(CW-1,S.cx+S.joyX*spd*inv));
+      const ny=Math.max(0,Math.min(CH-1,S.cy+S.joyY*spd*inv));
+      const gx=Math.round(nx),gy=Math.round(ny);
+      if(gx!==S.cx||gy!==S.cy){
+        S.cx=gx;S.cy=gy;
+        const t=S.trail[S.trail.length-1];
+        if(!t||t.x!==gx||t.y!==gy){
+          S.trail.push({x:gx,y:gy,t:now});
+          if(S.sw[2])S.ghost.push({x:gx,y:gy,t:now+400});
+          checkEat(gx,gy);
+        }
+      }
+      // Keep fractional position for smooth joystick
+      S._fx=nx;S._fy=ny;
+    }else{S._fx=S.cx;S._fy=S.cy}
+    // Trail decay
+    if(!S.sw[0]){
+      const cutoff=now-2500;
+      S.trail=S.trail.filter(p=>p.t>cutoff);
+      S.ghost=S.ghost.filter(p=>p.t>cutoff);
+    }
+    drawCRT();
+  }
+  requestAnimationFrame(mainLoop);
+}
+
+// ── Start / Restart helpers ──
+let glitchActive=false,sigActive=false;
+function startLiveSystems(){
+  if(!glitchActive){glitchActive=true;schedGlitch()}
+  if(!sigActive){sigActive=true;schedSig()}
+  startPellets();
+}
+function stopLiveSystems(){
+  clearTimeout(glitchTid);glitchActive=false;
+  clearTimeout(sigTid);sigActive=false;
+  clearInterval(pelletIv);
+}
+
+// Watch for live state changes
+let wasLive=false;
+setInterval(()=>{
+  const now=live();
+  if(now&&!wasLive){startLiveSystems();updateDisplay()}
+  if(!now&&wasLive){stopLiveSystems()}
+  wasLive=now;
+},100);
+
+// ── Init ──
+applySkin();runBoot();updateSlider('sl1');updateSlider('sl2');updateHackUI();
+requestAnimationFrame(mainLoop);
+</script>
+</body>
+</html>

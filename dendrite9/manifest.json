@@ -1,0 +1,13 @@
+{
+  "name": "DENDRITE-9",
+  "short_name": "DENDRITE-9",
+  "description": "Neural Interface Fidget Device v0.9.5",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0e",
+  "theme_color": "#0a0a0e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
